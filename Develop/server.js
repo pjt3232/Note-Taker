@@ -28,3 +28,29 @@ app.get('/api/notes', (req, res) => {
         }
     });
 });
+
+app.post('/api/notes', (req, res) => {
+    const newNote = req.body;
+
+    fs.readFile(path.join(__dirname, 'db', 'db.json'), 'utf8', (err, data) => {
+        if(err) {
+            console.error(err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            const notes = JSON.parse(data);
+
+            const newNoteId = generateUniqueId();
+            newNote.id = newNoteId;
+            notes.push(newNote);
+
+            fs.writeFile(path.join(__dirname, 'db', 'db.json'), JSON.stringify(notes), (err) => {
+                if(err) {
+                    console.error(err);
+                    res.status(500).json({ error: 'Internal Service Error' });
+                } else {
+                    res.json(newNote);
+                }
+            });
+        }
+    });
+});
