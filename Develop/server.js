@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path')
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -10,47 +11,76 @@ app.use(express.json());
 app.use(express.static('public'));
 
 app.get('/notes', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'notes.html'));
+    res.sendFile(path.join(__dirname, '/public/notes.html'));
 });
 
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, '/public/index.html'));
 });
 
 app.get('/api/notes', (req, res) => {
-    fs.readFile(path.join(__dirname, 'db', 'db.json'), 'utf8', (err, data) => {
+    const dbFilePath = path.join(__dirname, '/db/db.json');
+    
+    fs.readFile(dbFilePath, 'utf8', (err, data) => {
         if(err) {
             console.error(err);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            const notes = JSON.parse(data);
-            res.json(notes);
+            return res.status(500).json({ error: 'Internal Service Error' });
         }
+
+        let notes;
+        try {
+            notes = JSON.parse(data);
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Internal Service Error' });
+        }
+
+        res.json(notes);
     });
 });
 
 app.post('/api/notes', (req, res) => {
     const newNote = req.body;
+    const dbFilePath = path.join(__dirname, '/db/db.json');
 
-    fs.readFile(path.join(__dirname, 'db', 'db.json'), 'utf8', (err, data) => {
+    fs.readFile(dbFilePath, 'utf8', (err, data) => {
         if(err) {
             console.error(err);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            const notes = JSON.parse(data);
-
-            const newNoteId = generateUniqueId();
-            newNote.id = newNoteId;
-            notes.push(newNote);
-
-            fs.writeFile(path.join(__dirname, 'db', 'db.json'), JSON.stringify(notes), (err) => {
-                if(err) {
-                    console.error(err);
-                    res.status(500).json({ error: 'Internal Service Error' });
-                } else {
-                    res.json(newNote);
-                }
-            });
+            return res.status(500).json({ error: 'Internal Service Error' });
         }
+
+        let notes;
+        try {
+            notes = JSON.parse(data);
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Internal Service Error' });
+        }
+
+        const newNoteId = uuidv4();
+        newNote.id = newNoteId;
+        notes.push(newNote);
+
+        fs.writeFile(dbFilePath, JSON.stringify(notes), (err) => {
+            if(err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Internal Service Error' });
+            }
+
+            res.json(newNote);
+        });
     });
+});
+
+const getNotes = () => {
+    const data = fs.readFileSync(dbPath, 'utf8');
+    return JSON.parse(data);
+};
+
+const saveNotes = (notes) => {
+    fs.writeFileSync(dbPath, JSON.stringify(notes));
+};
+
+app.listen(PORT, () => {
+    console.log(`Server listening on http://localhost:${PORT}`);
 });
