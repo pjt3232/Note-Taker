@@ -14,18 +14,14 @@ app.get('/notes', (req, res) => {
     res.sendFile(path.join(__dirname, '/public/notes.html'));
 });
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '/public/index.html'));
-});
-
 app.get('/api/notes', (req, res) => {
-    const dbFilePath = path.join(__dirname, '/db/db.json');
+    const dbFilePath = path.join(__dirname, './db/db.json');
     
     fs.readFile(dbFilePath, 'utf8', (err, data) => {
         if(err) {
             console.error(err);
             return res.status(500).json({ error: 'Internal Service Error' });
-        }
+        } 
 
         let notes;
         try {
@@ -72,14 +68,41 @@ app.post('/api/notes', (req, res) => {
     });
 });
 
-const getNotes = () => {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-};
+app.delete('/api/notes/:id', (req, res) => {
+    const noteId = req.params.id;
 
-const saveNotes = (notes) => {
-    fs.writeFileSync(dbPath, JSON.stringify(notes));
-};
+    const dbFilePath = path.join(__dirname, '/db/db.json');
+
+    fs.readFile(dbFilePath, 'utf8', (err, data) => {
+        if(err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Internal Service Error' });
+        }
+        
+        let notes;
+        try {
+            notes = JSON.parse(data);
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Internal Service Error' });
+        }
+
+        const updatedNotes = notes.filter((note) => note.id !== noteId);
+
+        fs.writeFile(dbFilePath, JSON.stringify(updatedNotes), (err) => {
+            if(err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Internal Service Error' });
+            }
+
+            res.json({ success: true });
+        });
+    });
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '/public/index.html'));
+});
 
 app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
