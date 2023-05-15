@@ -102,7 +102,7 @@ app.delete('/api/notes/:id', (req, res) => {
     const noteId = req.params.id;
     const dbFilePath = path.join(__dirname, '/db/db.json');
 
-    //reads the db.json file and writes a new file that deletes the specified id from the db.json file
+    //reads the db.json file and writes a file with the deleted id from the db.json file
     fs.readFile(dbFilePath, 'utf8', (err, data) => {
         if(err) {
             console.error(err);
@@ -136,7 +136,7 @@ app.delete('/api/notes/:id', (req, res) => {
     });
 });
 
-//HTTP get request using wildcard route that redirects the client to the inde.html page if no other routes match
+//HTTP get request using wildcard route that redirects the client to the index.html page if no other routes match
 //this is lower in the code because I had issues with it overriding my other get requests
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '/public/index.html'));
